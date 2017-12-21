@@ -9,63 +9,72 @@ class Player:
 
 class Game:
     def __init__(self, players = 2):
-        self.bag = { i:20 for i in range(gameDim) }
+        self.bag = [ 20 for i in range(gameDim) ]
         numPlacards = { 2:5, 3:6, 4:7 }
-        self.placards = [ self.emptyDict() for x in range(numPlacards[players]) ]
-        self.middle = self.emptyDict()
-        self.garbage = self.emptyDict()
+        self.placards = [ self.emptyList() for x in range(numPlacards[players]) ]
+        self.middle = self.emptyList()
+        self.garbage = self.emptyList()
         self.players = [ Player() for i in range(players) ]
         self.deal() 
 
-    def emptyDict(self):
-        result = { i:0 for i in range(gameDim) }
+    def emptyList(self):
+        result = [ 0 for i in range(gameDim) ]
         return result
 
-    # Takes a piece dictionary like {1:4, 2:0, 3:1, ..} 
+    # Takes a piece list like [4, 0, 1, ..]
     #  and returns [1,1,1,1,3, ..]
-    def flattenDict(self, aDict):
+    def explodeList(self, el):
         result = []
-        for k, v in aDict.items():
-            for i in range(v): result.append(k)
+        for i, v in enumerate(el):
+            for x in range(v): result.append(i)
         return result
 
     # Does the opposite of above
-    def dictifyList(self, aList):
-        result = {}
-        for x in aList:
-            if x in result: result[x] += 1
-            else: result[x] = 1
+    def compressList(self, aList):
+        result = self.emptyList()
+        for x in aList: result[x] += 1
         return result
 
+    # Shuffles the bag
+    # For each Placard:
+    #   If there is enough tiles in the bag, put the last 4 on the placard;
+    #   Otherwise add the garbage to the bag and reshuffle.
     def deal(self):
         # Flatten bag
-        bag = self.flattenDict(self.bag)
+        bag = self.explodeList(self.bag)
         shuffle(bag)
         for i, el in enumerate(self.placards):
             if (len(bag) < 4): 
-                garbage = self.flattenDict(self.garbage)
+                garbage = self.explodeList(self.garbage)
                 self.garbage = { i:0 for i in range(gameDim) }
                 bag = bag + garbage
                 shuffle(bag)
 
             if (len(bag) < 4):
-                print("Still don't have enough pieces.")
                 raise bag
         
             placard = bag[-4:]
             bag = bag[:-4]
-            print(placard)
-            print(bag)
-            self.placards[i] = self.dictifyList(placard)
-        self.bag = self.dictifyList(bag)
+            self.placards[i] = self.compressList(placard)
+        self.bag = self.compressList(bag)
+
+    def prettyList(self, aList):
+        result = ""
+        for i, v in enumerate(aList):
+            result += "{0:3d}\t".format(v)
+        return result
 
     def __str__(self):
-        result = "Bag: " + str(self.bag) + "\n"
-        result += "Placards: \n"
+        result = "\t\t"
+        for i in range(gameDim):
+            result += "{0:3d}\t".format(i)
+        result += "\n"
+        result += "Bag:\t\t" + self.prettyList(self.bag) + "\n"
+        result += "Placards:\n"
         for i, el in enumerate(self.placards):
-            result += "\t" + str(i) + ". " + str(el) + "\n"
-        result += "Middle: " + str(self.middle) + "\n"
-        result += "Garbage: " + str(self.garbage) + "\n"
+            result += "\t\t" + str(i) + ".\t" + self.prettyList(el) + "\n"
+        result += "Middle:\t\t" + self.prettyList(self.middle) + "\n"
+        result += "Garbage:\t" + self.prettyList(self.garbage) + "\n"
         result += "Players: " + "\n"
         for p in self.players:
             result += "\t" + str(p) + "\n"
